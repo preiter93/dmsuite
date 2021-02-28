@@ -1,0 +1,11 @@
+[package]
+name = "dmsuite"
+version = "0.1.0"
+authors = ["preiter <preiter@gwdg.de>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+ndarray = "0.13.0"
+assert_approx_eq = "1.1.0"
