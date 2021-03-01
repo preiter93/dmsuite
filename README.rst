@@ -2,7 +2,8 @@ dmsuite
 =======
 
 A collection of spectral collocation differentiation matrices for rust.
-The current version supports chebdif and fourdif.
+The current version supports chebdif and fourdif + 
+the FFT based counterparts chebdifft and fourdifft.
 
 This collection is based on the python version `DMSUITE-Python`__.
 The original version is a matlab/octave collection from Weidemann and Reddy and available from `DMSUITE`__.  The theory and examples are
