@@ -33,11 +33,15 @@ pub fn fourdif(n: usize, der: usize) -> (Array1<f64>,Array2<f64>) {
         };
         // Stack
         let col1 = if n % 2 == 0{
-            col1*stack![Axis(0),topc,(-1.*&topc).slice(s![0..nn1;-1])]
+            // col1*stack![Axis(0),topc,(-1.*&topc).slice(s![0..nn1;-1])]
+            col1*concatenate(Axis(0),&[topc.view(),(-1.*&topc).slice(s![0..nn1;-1])]).unwrap()
         } else {
-            col1*stack![Axis(0),topc, topc.slice(s![0..nn1;-1])]
+            // col1*stack![Axis(0),topc, topc.slice(s![0..nn1;-1])]
+            col1*concatenate(Axis(0),&[topc.view(),topc.slice(s![0..nn1;-1])]).unwrap()
         };
-        let col1 = stack![Axis(0),arr1(&[0.]),col1];
+        // let col1 = stack![Axis(0),arr1(&[0.]),col1];
+        let col1 = concatenate(Axis(0),&[arr1(&[0.]).view(),col1.view()]).unwrap();
+
         // First row
         let row1 = -col1.clone();
         // Assign to use outside this scope
@@ -62,12 +66,15 @@ pub fn fourdif(n: usize, der: usize) -> (Array1<f64>,Array2<f64>) {
         // Stack
         let (c,col1) = if n % 2 == 0{
             (-PI.powi(2)/3./dx.powi(2)-1./6.,
-            col1*stack![Axis(0),topc, topc.slice(s![0..nn1;-1])])
+            //col1*stack![Axis(0),topc, topc.slice(s![0..nn1;-1])])
+            col1*concatenate(Axis(0),&[topc.view(),topc.slice(s![0..nn1;-1])]).unwrap())
         } else {
             (-PI.powi(2)/3./dx.powi(2)+1./12.,
-            col1*stack![Axis(0),topc,(-1.*&topc).slice(s![0..nn1;-1])])
+            // col1*stack![Axis(0),topc,(-1.*&topc).slice(s![0..nn1;-1])])
+            col1*concatenate(Axis(0),&[topc.view(),(-1.*&topc).slice(s![0..nn1;-1])]).unwrap())
         };
-        let col1 = stack![Axis(0),arr1(&[c]),col1];
+        // let col1 = stack![Axis(0),arr1(&[c]),col1];
+        let col1 = concatenate(Axis(0),&[arr1(&[c]).view(),col1.view()]).unwrap();
 
         // First row
         let row1 = col1.clone();
