@@ -3,6 +3,9 @@ use ndarray::*;
 use rustfft::{FftPlanner, num_complex::Complex};
 use realfft::RealFftPlanner;
 
+// De-alise: Cut spectral data, keep only [0..N*ALIAS] Modes
+pub const ALIAS: f64 = 2./3.; 
+
 // Perform chebyshev spectral differentiation via real to complex FFT 
 // Input:
 // f:	    Vector of type Vec<f64> containing function valuesat the Chebyshev points
@@ -15,6 +18,7 @@ use realfft::RealFftPlanner;
 // This version uses the faster real to complex fft
 pub fn chebdifft(f: &mut Array1<f64>, der: usize) -> Array1<f64> {
 	let n = f.len(); 
+	let n_alias: usize = (n as f64*ALIAS) as usize;
 	//// Setup real to complex FFT
 	let length = 2*n-2; 
 	// Planner
@@ -38,7 +42,12 @@ pub fn chebdifft(f: &mut Array1<f64>, der: usize) -> Array1<f64> {
 		&[ arr1(&[0.5]).view(),Array::ones(n-2).view(),arr1(&[0.5]).view()]).unwrap()
 		/(n as f64 -1.0);
 	a0 *= &b0;
-	
+
+	// Dealise: Set large cheby modes to zero
+	for i in n-n_alias..n{
+		a0[i] *= 0.;
+	}
+
 	// Recursion formula for computing coefficients
 	let mut a:Array2<f64> = Array::zeros( (n,der+1));
 	a.slice_mut(s![..,0]).assign(&a0);
@@ -49,6 +58,7 @@ pub fn chebdifft(f: &mut Array1<f64>, der: usize) -> Array1<f64> {
 		a[[0,ell]] = a[[1,ell-1]] + a[[2,ell]]/2.0;
 		}
 	}
+
 	// println!("{:?}", a);
 	// Transform back into physical space
 	let b1 = arr1(&[2.*&a[[0,  der]]]);
@@ -80,6 +90,7 @@ pub fn chebdifft(f: &mut Array1<f64>, der: usize) -> Array1<f64> {
 #[allow(dead_code)]
 pub fn chebdifft_c2c(f: &mut Array1<f64>, der: usize) -> Array1<f64> {
 	let n = f.len(); 
+	let n_alias: usize = (n as f64*ALIAS) as usize;
 	// Setup FFT
 	let length = 2*n-2;
 	let mut planner = FftPlanner::<f64>::new();
@@ -101,6 +112,11 @@ pub fn chebdifft_c2c(f: &mut Array1<f64>, der: usize) -> Array1<f64> {
 		&[ arr1(&[0.5]).view(),Array::ones(n-2).view(),arr1(&[0.5]).view()]).unwrap()
 		/(n as f64 -1.0);
 	a0 *= &b0;
+
+	// Dealise: Set large cheby modes to zero
+	for i in n-n_alias..n{
+		a0[i] *= 0.;
+	}
 
 	// Recursion formula for computing coefficients
 	let mut a:Array2<f64> = Array::zeros( (n,der+1));
@@ -141,7 +157,7 @@ mod tests {
     use time_test::*;
     pub const PI: f64 = 3.14159265358979323846264338327950288f64;
     const N: usize = 10000;
-    const TOL: f64 = 1e-3f64;
+    const TOL: f64 = 1e-5f64;
   
     #[test]
     fn test_chebdifft_c2c (){
@@ -164,8 +180,8 @@ mod tests {
         for (af, bf) in d1f.iter().zip(d1f_cheb.iter()) {
             assert_approx_eq!(af, bf, tol); // Check correctness
         }
-        let d2f = d2f.slice(s![n/20..n-n/20]); // Cut off edge nodes for check
-        let d2f_cheb = d2f_cheb.slice(s![n/20..n-n/20]);
+        // let d2f = d2f.slice(s![n/20..n-n/20]); // Cut off edge nodes for check
+        // let d2f_cheb = d2f_cheb.slice(s![n/20..n-n/20]);
         for (af, bf) in d2f.iter().zip(d2f_cheb.iter()) {
             assert_approx_eq!(af, bf, tol*1000.); // Check correctness
         }
@@ -192,8 +208,8 @@ mod tests {
         for (af, bf) in d1f.iter().zip(d1f_cheb.iter()) {
             assert_approx_eq!(af, bf, tol); // Check correctness
         }
-        let d2f = d2f.slice(s![n/20..n-n/20]); // Cut off edge nodes for check
-        let d2f_cheb = d2f_cheb.slice(s![n/20..n-n/20]);
+        // let d2f = d2f.slice(s![n/20..n-n/20]); // Cut off edge nodes for check
+        // let d2f_cheb = d2f_cheb.slice(s![n/20..n-n/20]);
         for (af, bf) in d2f.iter().zip(d2f_cheb.iter()) {
             assert_approx_eq!(af, bf, tol*1000.); // Check correctness
         }
