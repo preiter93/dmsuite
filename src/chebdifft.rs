@@ -156,7 +156,7 @@ mod tests {
     extern crate time_test;
     use time_test::*;
     pub const PI: f64 = 3.14159265358979323846264338327950288f64;
-    const N: usize = 10000;
+    const N: usize = 10_000;
     const TOL: f64 = 1e-5f64;
   
     #[test]
@@ -180,8 +180,6 @@ mod tests {
         for (af, bf) in d1f.iter().zip(d1f_cheb.iter()) {
             assert_approx_eq!(af, bf, tol); // Check correctness
         }
-        // let d2f = d2f.slice(s![n/20..n-n/20]); // Cut off edge nodes for check
-        // let d2f_cheb = d2f_cheb.slice(s![n/20..n-n/20]);
         for (af, bf) in d2f.iter().zip(d2f_cheb.iter()) {
             assert_approx_eq!(af, bf, tol*1000.); // Check correctness
         }
@@ -208,8 +206,6 @@ mod tests {
         for (af, bf) in d1f.iter().zip(d1f_cheb.iter()) {
             assert_approx_eq!(af, bf, tol); // Check correctness
         }
-        // let d2f = d2f.slice(s![n/20..n-n/20]); // Cut off edge nodes for check
-        // let d2f_cheb = d2f_cheb.slice(s![n/20..n-n/20]);
         for (af, bf) in d2f.iter().zip(d2f_cheb.iter()) {
             assert_approx_eq!(af, bf, tol*1000.); // Check correctness
         }
