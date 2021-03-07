@@ -3,6 +3,12 @@ use ndarray::*;
 pub const PI: f64 = 3.14159265358979323846264338327950288f64;
 use crate::common::*;
 
+/// Calculate differentiation matrices using Fourier transform.
+/// Returns the differentiation matrices Dm  corresponding to the
+/// der-th derivative of the function f, at the uniform distributed 
+/// nodes in the interval [0,2pi]. Adapted from [1]
+///
+/// [1] https://github.com/labrosse/dmsuite
 #[allow(non_snake_case)]
 pub fn fourdif(n: usize, der: usize) -> (Array1<f64>,Array2<f64>) {
     assert!( der > 0, "der must be greater than 0!") ; 

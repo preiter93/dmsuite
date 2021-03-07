@@ -17,14 +17,14 @@ where
 
 /// Set diagonals of matrix to fixed value
 pub fn set_diag(arr: &mut Array2<f64>, val: f64) {
-	assert!(arr.shape()[0] == arr.shape()[1]  );
+	assert!(arr.is_square(), "must be square" );
 	for a_ii in arr.diag_mut() {
         *a_ii = val;
     }
 }
 
 pub fn set_diag_from_arr(arr: &mut Array2<f64>, val: &Array1<f64>) {
-	assert!(arr.shape()[0] == arr.shape()[1]  );
+	assert!(arr.is_square(), "must be square" );
 	assert!(arr.shape()[0] == val.len() );
 	for (i,a_ii) in arr.diag_mut().iter_mut().enumerate() {
         *a_ii = val[i];

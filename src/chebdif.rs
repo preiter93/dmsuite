@@ -39,20 +39,13 @@ pub fn chebdif(n: usize, der: usize) -> (Array1<f64>,Array2<f64>) {
 
     // C
     let mut C = toeplitz1(&k.map(|x| (-1_i32).pow(*x as u32) as f64));
-    for a in C.slice_mut(s![..,0]){
-        *a *= 0.5;
+    let slice = Slice::new(0, Some(n as isize+1), n as isize); // 1 and -1
+    for a in C.slice_axis_mut(Axis(0), slice){
+        *a*=2.;
     }
-    for a in C.slice_mut(s![..,-1]){
-        *a *= 0.5;
+    for a in C.slice_axis_mut(Axis(1), slice){
+        *a*=0.5;
     }
-    for a in C.slice_mut(s![0,..]){
-        *a *= 2.;
-    }
-    for a in C.slice_mut(s![-1,..]){
-        *a *= 2.;
-    }
-    // let vec = &C.slice(s![0,..])*2.0; // Alternative
-    // C.slice_mut(s![0,..]).assign(&vec);
 
     // Z 
     let mut Z = 1.0/&Dx; 

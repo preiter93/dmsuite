@@ -38,10 +38,9 @@ pub fn chebdifft(f: &mut Array1<f64>, der: usize) -> Array1<f64> {
 	// Unpack Real part, a0 contains Chebychev coefficient of f
 	let mut a0: Array1<f64> = Array::from(spectrum[0..n]
 		.iter().map(|x| x.re).collect::<Vec<f64>>() );
-	let b0: Array1<f64> = concatenate(Axis(0), // chain together
-		&[ arr1(&[0.5]).view(),Array::ones(n-2).view(),arr1(&[0.5]).view()]).unwrap()
-		/(n as f64 -1.0);
-	a0 *= &b0;
+	a0 /= n as f64 -1.0;
+	a0[0]  *= 0.5;
+	a0[n-1]*= 0.5;
 
 	// Dealise: Set large cheby modes to zero
 	for i in n-n_alias..n{
@@ -59,17 +58,14 @@ pub fn chebdifft(f: &mut Array1<f64>, der: usize) -> Array1<f64> {
 		}
 	}
 
-	// println!("{:?}", a);
 	// Transform back into physical space
-	let b1 = arr1(&[2.*&a[[0,  der]]]);
-	let b3 = arr1(&[2.*&a[[n-1,der]]]);
-	let b2 = a.slice(s![1..n-1,   der]);
-	let b4 = a.slice(s![1..n-1;-1,der]);
-	let back = concatenate(Axis(0), // chain together
-		&[ b1.view(),b2,b3.view(),b4] ).unwrap();
+	let mut indata: Vec<f64> = Vec::new();
+	indata.push(2.*&a[[0,  der]]);
+	indata.append(&mut a.slice(s![1..n-1,   der]).to_vec());
+	indata.push(2.*&a[[n-1,der]]);
+	indata.append(&mut a.slice(s![1..n-1;-1, der]).to_vec());
 
 	// Forward transform of real input vector
-	let mut indata: Vec<f64> = back.to_vec().clone();
 	r2c.process(&mut indata, &mut spectrum).unwrap();
 	// Unpack Real part
 	return Array::from(spectrum.iter().map(|x| 0.5*x.re).collect::<Vec<f64>>() )
@@ -108,10 +104,9 @@ pub fn chebdifft_c2c(f: &mut Array1<f64>, der: usize) -> Array1<f64> {
 	// Unpack Real part, a0 contains Chebychev coefficient of f
 	let mut a0: Array1<f64> = Array::from(
 		buffer[0..n].iter().map(|x| x.re).collect::<Vec<f64>>() );
-	let b0: Array1<f64> = concatenate(Axis(0), // chain together
-		&[ arr1(&[0.5]).view(),Array::ones(n-2).view(),arr1(&[0.5]).view()]).unwrap()
-		/(n as f64 -1.0);
-	a0 *= &b0;
+	a0 /= n as f64 -1.0;
+	a0[0]  *= 0.5;
+	a0[n-1] *= 0.5;
 
 	// Dealise: Set large cheby modes to zero
 	for i in n-n_alias..n{
@@ -128,17 +123,16 @@ pub fn chebdifft_c2c(f: &mut Array1<f64>, der: usize) -> Array1<f64> {
 		a[[0,ell]] = a[[1,ell-1]] + a[[2,ell]]/2.0;
 		}
 	}
-	// println!("{:?}", a);
+	
 	// Transform back into physical space
-	let b1 = arr1(&[2.*&a[[0,  der]]]);
-	let b3 = arr1(&[2.*&a[[n-1,der]]]);
-	let b2 = a.slice(s![1..n-1,   der]);
-	let b4 = a.slice(s![1..n-1;-1,der]);
-	let back = concatenate(Axis(0), // chain together
-		&[ b1.view(),b2,b3.view(),b4] ).unwrap();
+	let mut indata: Vec<f64> = Vec::new();
+	indata.push(2.*&a[[0,  der]]);
+	indata.append(&mut a.slice(s![1..n-1,   der]).to_vec());
+	indata.push(2.*&a[[n-1,der]]);
+	indata.append(&mut a.slice(s![1..n-1;-1, der]).to_vec());
 	// Transfer data to buffer
 	for (i,val) in &mut buffer.iter_mut().enumerate() { 
-		val.re = back[i];
+		val.re = indata[i];
 	}
 	// Perform fft
 	fft.process(&mut buffer);
