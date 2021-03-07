@@ -48,6 +48,8 @@ pub fn chebdifft(f: &mut Array1<f64>, der: usize) -> Array1<f64> {
 	}
 
 	// Recursion formula for computing coefficients
+	// See: Spectral Methods in Fluid Dynamics by Claudio Canuto
+	// Eq. (2.4.26)
 	let mut a:Array2<f64> = Array::zeros( (n,der+1));
 	a.slice_mut(s![..,0]).assign(&a0);
 	for ell in 1..der+1{
