@@ -1,5 +1,5 @@
 extern crate ndarray;
-use ndarray::*;
+use ndarray::{s, Array1, Array2, ArrayBase, Axis, Data, Ix1, Ix2};
 
 /// Equivalent to np.tile()
 pub fn tile<S>(a: &ArrayBase<S, Ix1>) -> Array2<f64>
@@ -98,70 +98,71 @@ where
     rv.slice_mut(s![.., ..]).assign(&aa.slice(s![..,..;-1]));
     rv
 }
-//
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//
-//     #[test]
-//     fn test_flipud() {
-//         // Init
-//         let aa = arr2(&[[1., 2., 3.], [4., 5., 6.], [7., 8., 9.]]);
-//         let bb = arr2(&[[7., 8., 9.], [4., 5., 6.], [1., 2., 3.]]);
-//         let cc = flipud(&aa);
-//         // Check
-//         assert_eq!(cc, bb);
-//     }
-//
-//     #[test]
-//     fn test_flipud_view() {
-//         // Init
-//         let aa = arr2(&[[1., 2., 3.], [4., 5., 6.], [7., 8., 9.]]);
-//         let bb = arr2(&[[7., 8., 9.], [4., 5., 6.], [1., 2., 3.]]);
-//         let cc = flipud(&aa.view());
-//         // Check
-//         assert_eq!(cc, bb);
-//     }
-//
-//     #[test]
-//     fn test_fliplr() {
-//         // Init
-//         let aa = arr2(&[[1., 2., 3.], [4., 5., 6.], [7., 8., 9.]]);
-//         let bb = arr2(&[[3., 2., 1.], [6., 5., 4.], [9., 8., 7.]]);
-//         let cc = fliplr(&aa);
-//         // Check
-//         assert_eq!(cc, bb);
-//     }
-//
-//     #[test]
-//     fn test_toeplitz() {
-//         // Init
-//         let l = Array::range(0., 3., 1.);
-//         let u = -Array::range(0., 3., 1.);
-//         let t_exp = arr2(&[[0., -1.0, -2.], [1., 0., -1.], [2., 1., 0.]]);
-//         let t = toeplitz(&l, &u);
-//         // Check
-//         assert_eq!(t, t_exp);
-//     }
-//
-//     #[test]
-//     #[should_panic]
-//     /// l and u must be same size
-//     fn test_toeplitz_fail() {
-//         // Init
-//         let l = Array::range(0., 3., 1.);
-//         let u = -Array::range(1., 3., 1.);
-//         let _ = toeplitz(&l, &u);
-//     }
-//
-//     #[test]
-//     #[should_panic]
-//     /// l and u must have same first element
-//     fn test_toeplitz_fail2() {
-//         // Init
-//         let l = Array::range(0., 3., 1.);
-//         let mut u = -Array::range(0., 3., 1.);
-//         u[0] = 99.;
-//         let _ = toeplitz(&l, &u);
-//     }
-// }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ndarray::{arr2, Array};
+
+    #[test]
+    fn test_flipud() {
+        // Init
+        let aa = arr2(&[[1., 2., 3.], [4., 5., 6.], [7., 8., 9.]]);
+        let bb = arr2(&[[7., 8., 9.], [4., 5., 6.], [1., 2., 3.]]);
+        let cc = flipud(&aa);
+        // Check
+        assert_eq!(cc, bb);
+    }
+
+    #[test]
+    fn test_flipud_view() {
+        // Init
+        let aa = arr2(&[[1., 2., 3.], [4., 5., 6.], [7., 8., 9.]]);
+        let bb = arr2(&[[7., 8., 9.], [4., 5., 6.], [1., 2., 3.]]);
+        let cc = flipud(&aa.view());
+        // Check
+        assert_eq!(cc, bb);
+    }
+
+    #[test]
+    fn test_fliplr() {
+        // Init
+        let aa = arr2(&[[1., 2., 3.], [4., 5., 6.], [7., 8., 9.]]);
+        let bb = arr2(&[[3., 2., 1.], [6., 5., 4.], [9., 8., 7.]]);
+        let cc = fliplr(&aa);
+        // Check
+        assert_eq!(cc, bb);
+    }
+
+    #[test]
+    fn test_toeplitz() {
+        // Init
+        let l = Array::range(0., 3., 1.);
+        let u = -Array::range(0., 3., 1.);
+        let t_exp = arr2(&[[0., -1.0, -2.], [1., 0., -1.], [2., 1., 0.]]);
+        let t = toeplitz(&l, &u);
+        // Check
+        assert_eq!(t, t_exp);
+    }
+
+    #[test]
+    #[should_panic]
+    /// l and u must be same size
+    fn test_toeplitz_fail() {
+        // Init
+        let l = Array::range(0., 3., 1.);
+        let u = -Array::range(1., 3., 1.);
+        let _ = toeplitz(&l, &u);
+    }
+
+    #[test]
+    #[should_panic]
+    /// l and u must have same first element
+    fn test_toeplitz_fail2() {
+        // Init
+        let l = Array::range(0., 3., 1.);
+        let mut u = -Array::range(0., 3., 1.);
+        u[0] = 99.;
+        let _ = toeplitz(&l, &u);
+    }
+}

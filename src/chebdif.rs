@@ -1,6 +1,5 @@
-extern crate ndarray;
-use crate::common::*;
-use ndarray::*;
+use crate::common::{fliplr, flipud, set_diag, set_diag_from_arr, tile, toeplitz1};
+use ndarray::{s, Array, Array1, Array2, Axis, Slice};
 use std::f64::consts::PI;
 
 /// Calculate differentiation matrices using Chebyshev collocation.
@@ -8,8 +7,9 @@ use std::f64::consts::PI;
 /// der-th derivative of the function f, at the ncheb Chebyshev nodes in the
 /// interval [-1,1]. Adapted from [1]
 ///
-/// [1] https://github.com/labrosse/dmsuite
+/// [1] <https://github.com/labrosse/dmsuite/>
 #[allow(non_snake_case)]
+#[allow(clippy::cast_sign_loss)]
 pub fn chebdif(n: usize, der: usize) -> (Array1<f64>, Array2<f64>) {
     assert!(n > 0, "der must be greater than 0!");
     assert!(n > der, "number of nodes must be greater than der!");
@@ -62,40 +62,40 @@ pub fn chebdif(n: usize, der: usize) -> (Array1<f64>, Array2<f64>) {
     }
     (x, -D)
 }
-//
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//     use assert_approx_eq::assert_approx_eq;
-//
-//     #[test]
-//     fn test_chebdif() {
-//         // Init
-//         let n = 20;
-//         let tol = 1e-4f64;
-//         // Run
-//         let (_, d1) = chebdif(n, 1);
-//         let (x, d2) = chebdif(n, 2);
-//         let f = (PI * &x).mapv(f64::sin);
-//         let d1f_exp = PI * (PI * &x).mapv(f64::cos);
-//         let d2f_exp = PI * PI * (PI * &x).mapv(f64::sin);
-//         let d1f = d1.dot(&f);
-//         let d2f = d2.dot(&f);
-//         // Check
-//         for (af, bf) in d1f.iter().zip(d1f_exp.iter()) {
-//             assert_approx_eq!(af, bf, tol); // Check correctness
-//         }
-//         for (af, bf) in d2f.iter().zip(d2f_exp.iter()) {
-//             assert_approx_eq!(af, bf, tol); // Check correctness
-//         }
-//     }
-//
-//     #[test]
-//     #[should_panic]
-//     fn test_chebdif_fail() {
-//         // Init
-//         let n = 20;
-//         // Run
-//         let (_, _) = chebdif(n, n + 1); // must panic: der>n
-//     }
-// }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use assert_approx_eq::assert_approx_eq;
+
+    #[test]
+    fn test_chebdif() {
+        // Init
+        let n = 20;
+        let tol = 1e-4f64;
+        // Run
+        let (_, d1) = chebdif(n, 1);
+        let (x, d2) = chebdif(n, 2);
+        let f = (PI * &x).mapv(f64::sin);
+        let d1f_exp = PI * (PI * &x).mapv(f64::cos);
+        let d2f_exp = PI * PI * (PI * &x).mapv(f64::sin);
+        let d1f = d1.dot(&f);
+        let d2f = d2.dot(&f);
+        // Check
+        for (af, bf) in d1f.iter().zip(d1f_exp.iter()) {
+            assert_approx_eq!(af, bf, tol); // Check correctness
+        }
+        for (af, bf) in d2f.iter().zip(d2f_exp.iter()) {
+            assert_approx_eq!(af, bf, tol); // Check correctness
+        }
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_chebdif_fail() {
+        // Init
+        let n = 20;
+        // Run
+        let (_, _) = chebdif(n, n + 1); // must panic: der>n
+    }
+}

@@ -3,9 +3,9 @@ extern crate rustfft;
 use realfft::RealFftPlanner;
 use rustfft::num_complex::Complex;
 extern crate ndarray;
-use ndarray::*;
+use ndarray::{Array, Array1};
 
-/// Wrapper around fourdifft_vec to use with ndarray
+/// Wrapper around `fourdifft_vec` to use with ndarray
 pub fn fourdifft(indata: &mut Array1<f64>, der: usize) -> Array1<f64> {
     // Convert ndarray to vec
     let mut invec: Vec<f64> = indata.to_vec();
@@ -76,52 +76,52 @@ fn fft_ifft(indata: &mut Vec<f64>) -> Vec<f64> {
     }
     outdata
 }
-//
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//     use assert_approx_eq::assert_approx_eq;
-//     use itertools_num::linspace;
-//     extern crate time_test;
-//     use std::f64::consts::PI;
-//     use time_test::*;
-//     const N: usize = 10000;
-//
-//     #[test]
-//     fn test_fourdifft() {
-//         time_test!();
-//         // Init
-//         let n = N;
-//         let l = 2. * PI;
-//         let dx = l / n as f64;
-//         let mut f: Vec<f64> = linspace::<f64>(0., 2. * PI - dx, n).collect();
-//         for i in &mut f {
-//             *i = i.sin();
-//         }
-//         let mut d1f: Vec<f64> = linspace::<f64>(0., 2. * PI - dx, n).collect();
-//         for i in &mut d1f {
-//             *i = i.cos();
-//         }
-//         let mut d2f: Vec<f64> = linspace::<f64>(0., 2. * PI - dx, n).collect();
-//         for i in &mut d2f {
-//             *i = -i.sin();
-//         }
-//
-//         // Run
-//         let mut indata: Array1<f64> = Array::from(f.clone());
-//         let d1f_fourdiff = fourdifft(&mut indata, 1); // First derivative
-//         let mut indata: Array1<f64> = Array::from(f.clone());
-//         let d2f_fourdiff = fourdifft(&mut indata, 2); // Second derivative
-//         {
-//             time_test!("FFT Time");
-//         }
-//         // Check element-wise (maybe replace by norm)
-//         let tol = 1e-5f64;
-//         for (af, bf) in d1f.iter().zip(d1f_fourdiff.iter()) {
-//             assert_approx_eq!(af, bf, tol); // Check correctness
-//         }
-//         for (af, bf) in d2f.iter().zip(d2f_fourdiff.iter()) {
-//             assert_approx_eq!(af, bf, tol); // Check correctness
-//         }
-//     }
-// }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use assert_approx_eq::assert_approx_eq;
+    use itertools_num::linspace;
+    extern crate time_test;
+    use std::f64::consts::PI;
+    use time_test::*;
+    const N: usize = 10000;
+
+    #[test]
+    fn test_fourdifft() {
+        time_test!();
+        // Init
+        let n = N;
+        let l = 2. * PI;
+        let dx = l / n as f64;
+        let mut f: Vec<f64> = linspace::<f64>(0., 2. * PI - dx, n).collect();
+        for i in &mut f {
+            *i = i.sin();
+        }
+        let mut d1f: Vec<f64> = linspace::<f64>(0., 2. * PI - dx, n).collect();
+        for i in &mut d1f {
+            *i = i.cos();
+        }
+        let mut d2f: Vec<f64> = linspace::<f64>(0., 2. * PI - dx, n).collect();
+        for i in &mut d2f {
+            *i = -i.sin();
+        }
+
+        // Run
+        let mut indata: Array1<f64> = Array::from(f.clone());
+        let d1f_fourdiff = fourdifft(&mut indata, 1); // First derivative
+        let mut indata: Array1<f64> = Array::from(f.clone());
+        let d2f_fourdiff = fourdifft(&mut indata, 2); // Second derivative
+        {
+            time_test!("FFT Time");
+        }
+        // Check element-wise (maybe replace by norm)
+        let tol = 1e-5f64;
+        for (af, bf) in d1f.iter().zip(d1f_fourdiff.iter()) {
+            assert_approx_eq!(af, bf, tol); // Check correctness
+        }
+        for (af, bf) in d2f.iter().zip(d2f_fourdiff.iter()) {
+            assert_approx_eq!(af, bf, tol); // Check correctness
+        }
+    }
+}

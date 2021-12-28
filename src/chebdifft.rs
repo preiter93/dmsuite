@@ -1,21 +1,26 @@
 extern crate ndarray;
-use ndarray::*;
+use ndarray::{concatenate, s, Array, Array1, Array2, Axis};
 use realfft::RealFftPlanner;
 use rustfft::{num_complex::Complex, FftPlanner};
 
 // De-alise: Cut spectral data, keep only [0..N*ALIAS] Modes
 pub const ALIAS: f64 = 2. / 3.;
 
-// Perform chebyshev spectral differentiation via real to complex FFT
-// Input:
-// f:	    Vector of type Vec<f64> containing function valuesat the Chebyshev points
-//          x(k) = cos((k)*pi/(N-1)), k = 0...N-1.
-// der: 	Derivative order of type usize
-// Output:
-// outdata: Vector containing the approximate der'th derivative
-//
-// Note:
-// This version uses the faster real to complex fft
+/// Perform chebyshev spectral differentiation via real to complex FFT
+///
+/// Input:
+///
+/// f:  Vector of type Vec<f64> containing function valuesat the Chebyshev points
+///  x(k) = cos((k)*pi/(N-1)), k = 0...N-1.
+///
+/// der: Derivative order of type usize
+///
+/// Output:
+/// outdata: Vector containing the approximate der'th derivative
+///
+/// Note:
+/// This version uses the faster real to complex fft
+#[allow(clippy::cast_sign_loss)]
 pub fn chebdifft(f: &mut Array1<f64>, der: usize) -> Array1<f64> {
     let n = f.len();
     let n_alias: usize = (n as f64 * ALIAS) as usize;
@@ -51,7 +56,7 @@ pub fn chebdifft(f: &mut Array1<f64>, der: usize) -> Array1<f64> {
     // Eq. (2.4.26)
     let mut a: Array2<f64> = Array::zeros((n, der + 1));
     a.slice_mut(s![.., 0]).assign(&a0);
-    for ell in 1..der + 1 {
+    for ell in 1..=der {
         a[[n - ell - 1, ell]] = 2. * (n - ell) as f64 * a[[n - ell, ell - 1]];
         for k in (1..n - ell - 1).rev() {
             a[[k, ell]] = a[[k + 2, ell]] + 2. * (k + 1) as f64 * a[[k + 1, ell - 1]];
@@ -72,14 +77,17 @@ pub fn chebdifft(f: &mut Array1<f64>, der: usize) -> Array1<f64> {
 }
 
 /// Perform chebyshev spectral differentiation via FFT (complex to complex)
+///
 /// Input:
-///```
-/// f:	    Vector of type Vec<f64> containing function valuesat the Chebyshev points
+///
+/// f: Vector of type Vec<f64> containing function valuesat the Chebyshev points
 ///          x(k) = cos((k)*pi/(N-1)), k = 0...N-1.
-/// der: 	Derivative order of type usize
+///
+/// der: Derivative order of type usize
+///
 /// Output:
 /// outdata: Vector containing the approximate der'th derivative
-///```
+///
 /// Note:
 /// This version uses the c2c fft to transform to chebyshev space,
 /// which does redundant operations for real valued input (better: fn chebdifft)
@@ -93,8 +101,8 @@ pub fn chebdifft_c2c(f: &mut Array1<f64>, der: usize) -> Array1<f64> {
     let fft = planner.plan_fft_forward(length);
     let mut buffer = vec![
         Complex {
-            re: 0.0f64,
-            im: 0.0f64
+            re: 0.0_f64,
+            im: 0.0_f64
         };
         length
     ];
@@ -120,7 +128,7 @@ pub fn chebdifft_c2c(f: &mut Array1<f64>, der: usize) -> Array1<f64> {
     // Recursion formula for computing coefficients
     let mut a: Array2<f64> = Array::zeros((n, der + 1));
     a.slice_mut(s![.., 0]).assign(&a0);
-    for ell in 1..der + 1 {
+    for ell in 1..=der {
         a[[n - ell - 1, ell]] = 2. * (n - ell) as f64 * a[[n - ell, ell - 1]];
         for k in (1..n - ell - 1).rev() {
             a[[k, ell]] = a[[k + 2, ell]] + 2. * (k + 1) as f64 * a[[k + 1, ell - 1]];
@@ -147,70 +155,70 @@ pub fn chebdifft_c2c(f: &mut Array1<f64>, der: usize) -> Array1<f64> {
             .collect::<Vec<f64>>(),
     )
 }
-//
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//     use assert_approx_eq::assert_approx_eq;
-//     extern crate time_test;
-//     use std::f64::consts::PI;
-//     use time_test::*;
-//     const N: usize = 10_000;
-//     const TOL: f64 = 1e-5;
-//
-//     #[test]
-//     fn test_chebdifft_c2c() {
-//         time_test!();
-//         // Init
-//         let n = N;
-//         let k = Array::range(0., n as f64, 1.0);
-//         let x = (PI * k / (n as f64 - 1.0)).mapv(f64::cos); //Chebyshev nodes
-//         let f = (&x * PI).mapv(f64::sin);
-//         let d1f = PI * (&x * PI).mapv(f64::cos);
-//         let d2f = -1. * PI * PI * (&x * PI).mapv(f64::sin);
-//         // Run
-//         let mut indata: Array1<f64> = f.clone();
-//         let d1f_cheb = chebdifft_c2c(&mut indata, 1); // First derivative
-//         let mut indata: Array1<f64> = f.clone();
-//         let d2f_cheb = chebdifft_c2c(&mut indata, 2); // First derivative
-//         {
-//             time_test!("CHEBDIFFT Time");
-//         }
-//         // Check element-wise (maybe replace by norm)
-//         let tol = TOL;
-//         for (af, bf) in d1f.iter().zip(d1f_cheb.iter()) {
-//             assert_approx_eq!(af, bf, tol); // Check correctness
-//         }
-//         for (af, bf) in d2f.iter().zip(d2f_cheb.iter()) {
-//             assert_approx_eq!(af, bf, tol * 1000.); // Check correctness
-//         }
-//     }
-//
-//     #[test]
-//     fn test_chebdifft_r2c() {
-//         time_test!();
-//         // Init
-//         let n = N;
-//         let k = Array::range(0., n as f64, 1.0);
-//         let x = (PI * k / (n as f64 - 1.0)).mapv(f64::cos); //Chebyshev nodes
-//         let f = (&x * PI).mapv(f64::sin);
-//         let d1f = PI * (&x * PI).mapv(f64::cos);
-//         let d2f = -1. * PI * PI * (&x * PI).mapv(f64::sin);
-//         // Run
-//         let mut indata: Array1<f64> = f.clone();
-//         let d1f_cheb = chebdifft(&mut indata, 1); // First derivative
-//         let mut indata: Array1<f64> = f.clone();
-//         let d2f_cheb = chebdifft(&mut indata, 2); // First derivative
-//         {
-//             time_test!("CHEBDIFFT Time");
-//         }
-//         // Check element-wise (maybe replace by norm)
-//         let tol = TOL;
-//         for (af, bf) in d1f.iter().zip(d1f_cheb.iter()) {
-//             assert_approx_eq!(af, bf, tol); // Check correctness
-//         }
-//         for (af, bf) in d2f.iter().zip(d2f_cheb.iter()) {
-//             assert_approx_eq!(af, bf, tol * 1000.); // Check correctness
-//         }
-//     }
-// }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use assert_approx_eq::assert_approx_eq;
+    extern crate time_test;
+    use std::f64::consts::PI;
+    use time_test::*;
+    const N: usize = 10_000;
+    const TOL: f64 = 1e-5;
+
+    #[test]
+    fn test_chebdifft_c2c() {
+        time_test!();
+        // Init
+        let n = N;
+        let k = Array::range(0., n as f64, 1.0);
+        let x = (PI * k / (n as f64 - 1.0)).mapv(f64::cos); //Chebyshev nodes
+        let f = (&x * PI).mapv(f64::sin);
+        let d1f = PI * (&x * PI).mapv(f64::cos);
+        let d2f = -1. * PI * PI * (&x * PI).mapv(f64::sin);
+        // Run
+        let mut indata: Array1<f64> = f.clone();
+        let d1f_cheb = chebdifft_c2c(&mut indata, 1); // First derivative
+        let mut indata: Array1<f64> = f.clone();
+        let d2f_cheb = chebdifft_c2c(&mut indata, 2); // First derivative
+        {
+            time_test!("CHEBDIFFT Time");
+        }
+        // Check element-wise (maybe replace by norm)
+        let tol = TOL;
+        for (af, bf) in d1f.iter().zip(d1f_cheb.iter()) {
+            assert_approx_eq!(af, bf, tol); // Check correctness
+        }
+        for (af, bf) in d2f.iter().zip(d2f_cheb.iter()) {
+            assert_approx_eq!(af, bf, tol * 1000.); // Check correctness
+        }
+    }
+
+    #[test]
+    fn test_chebdifft_r2c() {
+        time_test!();
+        // Init
+        let n = N;
+        let k = Array::range(0., n as f64, 1.0);
+        let x = (PI * k / (n as f64 - 1.0)).mapv(f64::cos); //Chebyshev nodes
+        let f = (&x * PI).mapv(f64::sin);
+        let d1f = PI * (&x * PI).mapv(f64::cos);
+        let d2f = -1. * PI * PI * (&x * PI).mapv(f64::sin);
+        // Run
+        let mut indata: Array1<f64> = f.clone();
+        let d1f_cheb = chebdifft(&mut indata, 1); // First derivative
+        let mut indata: Array1<f64> = f.clone();
+        let d2f_cheb = chebdifft(&mut indata, 2); // First derivative
+        {
+            time_test!("CHEBDIFFT Time");
+        }
+        // Check element-wise (maybe replace by norm)
+        let tol = TOL;
+        for (af, bf) in d1f.iter().zip(d1f_cheb.iter()) {
+            assert_approx_eq!(af, bf, tol); // Check correctness
+        }
+        for (af, bf) in d2f.iter().zip(d2f_cheb.iter()) {
+            assert_approx_eq!(af, bf, tol * 1000.); // Check correctness
+        }
+    }
+}

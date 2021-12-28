@@ -1,6 +1,6 @@
 extern crate ndarray;
-use crate::common::*;
-use ndarray::*;
+use crate::common::toeplitz;
+use ndarray::{arr1, concatenate, s, Array, Array1, Array2, Axis};
 use std::f64::consts::PI;
 
 /// Calculate differentiation matrices using Fourier transform.
@@ -8,8 +8,8 @@ use std::f64::consts::PI;
 /// der-th derivative of the function f, at the uniform distributed
 /// nodes in the interval [0,2pi]. Adapted from [1]
 ///
-/// [1] https://github.com/labrosse/dmsuite
-#[allow(non_snake_case)]
+/// [1] <https://github.com/labrosse/dmsuite/>
+#[allow(non_snake_case, clippy::cast_sign_loss)]
 pub fn fourdif(n: usize, der: usize) -> (Array1<f64>, Array2<f64>) {
     assert!(der > 0, "der must be greater than 0!");
     assert!(der < 3, "der must be less than 3!");
@@ -95,52 +95,53 @@ pub fn fourdif(n: usize, der: usize) -> (Array1<f64>, Array2<f64>) {
     (x, dd)
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//     use assert_approx_eq::assert_approx_eq;
-//
-//     #[test]
-//     fn test_fourdif_even() {
-//         // Init
-//         let n = 20;
-//         let tol = 1e-10f64;
-//         // Run
-//         let (_, d1) = fourdif(n, 1);
-//         let (x, d2) = fourdif(n, 2);
-//         let f = (&x).mapv(f64::sin);
-//         let d1f_exp = 1. * (&x).mapv(f64::cos);
-//         let d2f_exp = -1. * (&x).mapv(f64::sin);
-//         let d1f = d1.dot(&f);
-//         let d2f = d2.dot(&f);
-//         // Check
-//         for (af, bf) in d1f.iter().zip(d1f_exp.iter()) {
-//             assert_approx_eq!(af, bf, tol); // Check correctness
-//         }
-//         for (af, bf) in d2f.iter().zip(d2f_exp.iter()) {
-//             assert_approx_eq!(af, bf, tol); // Check correctness
-//         }
-//     }
-//
-//     #[test]
-//     fn test_fourdif_odd() {
-//         // Init
-//         let n = 21;
-//         let tol = 1e-10f64;
-//         // Run
-//         let (_, d1) = fourdif(n, 1);
-//         let (x, d2) = fourdif(n, 2);
-//         let f = (&x).mapv(f64::sin);
-//         let d1f_exp = 1. * (&x).mapv(f64::cos);
-//         let d2f_exp = -1. * (&x).mapv(f64::sin);
-//         let d1f = d1.dot(&f);
-//         let d2f = d2.dot(&f);
-//         // Check
-//         for (af, bf) in d1f.iter().zip(d1f_exp.iter()) {
-//             assert_approx_eq!(af, bf, tol); // Check correctness
-//         }
-//         for (af, bf) in d2f.iter().zip(d2f_exp.iter()) {
-//             assert_approx_eq!(af, bf, tol); // Check correctness
-//         }
-//     }
-// }
+#[cfg(test)]
+mod tests {
+    extern crate ndarray_linalg;
+    use super::*;
+    use assert_approx_eq::assert_approx_eq;
+
+    #[test]
+    fn test_fourdif_even() {
+        // Init
+        let n = 20;
+        let tol = 1e-10f64;
+        // Run
+        let (_, d1) = fourdif(n, 1);
+        let (x, d2) = fourdif(n, 2);
+        let f = (&x).mapv(f64::sin);
+        let d1f_exp = 1. * (&x).mapv(f64::cos);
+        let d2f_exp = -1. * (&x).mapv(f64::sin);
+        let d1f = d1.dot(&f);
+        let d2f = d2.dot(&f);
+        // Check
+        for (af, bf) in d1f.iter().zip(d1f_exp.iter()) {
+            assert_approx_eq!(af, bf, tol); // Check correctness
+        }
+        for (af, bf) in d2f.iter().zip(d2f_exp.iter()) {
+            assert_approx_eq!(af, bf, tol); // Check correctness
+        }
+    }
+
+    #[test]
+    fn test_fourdif_odd() {
+        // Init
+        let n = 21;
+        let tol = 1e-10f64;
+        // Run
+        let (_, d1) = fourdif(n, 1);
+        let (x, d2) = fourdif(n, 2);
+        let f = (&x).mapv(f64::sin);
+        let d1f_exp = 1. * (&x).mapv(f64::cos);
+        let d2f_exp = -1. * (&x).mapv(f64::sin);
+        let d1f = d1.dot(&f);
+        let d2f = d2.dot(&f);
+        // Check
+        for (af, bf) in d1f.iter().zip(d1f_exp.iter()) {
+            assert_approx_eq!(af, bf, tol); // Check correctness
+        }
+        for (af, bf) in d2f.iter().zip(d2f_exp.iter()) {
+            assert_approx_eq!(af, bf, tol); // Check correctness
+        }
+    }
+}
